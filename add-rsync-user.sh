@@ -37,33 +37,33 @@ if [ $uid -lt 0 ]; then
 	exit 1
 fi
 
-rserver=$2
-if [ -z "${rserver##*:*}" ]; then
-	rhost="${rserver%:*}"
-	rport="${rserver##*:}"
+rsyncserver=$2
+if [ -z "${rsyncserver##*:*}" ]; then
+	rsynchost="${rsyncserver%:*}"
+	rsyncport="${rsyncserver##*:}"
 else
-	rhost=$rserver
-	rport=22
+	rsynchost=$rsyncserver
+	rsyncport=22
 fi
 
 if [ "$3" != "" ] && [ "$3" != "$2" ]; then
-	bserver=$3
+	backupserver=$3
 
-	if ! [[ $bserver =~ ^[a-z0-9.-]+[.][a-z0-9]+([:][0-9]+)?$ ]]; then
+	if ! [[ $backupserver =~ ^[a-z0-9.-]+[.][a-z0-9]+([:][0-9]+)?$ ]]; then
 		echo "error: parameter 3 not conforming host name format"
 		exit 1
 	fi
 
-	if [ -z "${bserver##*:*}" ]; then
-		bhost="${bserver%:*}"
-		bport="${bserver##*:}"
+	if [ -z "${backupserver##*:*}" ]; then
+		backuphost="${backupserver%:*}"
+		backupport="${backupserver##*:}"
 	else
-		bhost=$bserver
-		bport=22
+		backuphost=$backupserver
+		backupport=22
 	fi
 
-	if [ "`getent hosts $bhost`" = "" ]; then
-		echo "error: host $bhost not found"
+	if [ "`getent hosts $backuphost`" = "" ]; then
+		echo "error: host $backuphost not found"
 		exit 1
 	fi
 fi
@@ -76,17 +76,17 @@ path=/srv/rsync/$1/.ssh
 sudo -u rsync-$1 ssh-keygen -f $path/id_rsa -P ""
 cp -a $path/id_rsa.pub $path/authorized_keys
 
-rkey=`ssh_management_key_storage_filename $rhost`
-ssh -i $rkey -p $rport root@$rhost "groupadd -g $uid rsync-$1"
-ssh -i $rkey -p $rport root@$rhost "useradd -u $uid -d /srv/rsync/$1 -s /usr/bin/rssh -M -g rsync-$1 rsync-$1"
-rsync -e "ssh -i $rkey -p $rport" -av /srv/rsync/$1 root@$rhost:/srv/rsync
+rsynckey=`ssh_management_key_storage_filename $rsynchost`
+ssh -i $rsynckey -p $rsyncport root@$rsynchost "groupadd -g $uid rsync-$1"
+ssh -i $rsynckey -p $rsyncport root@$rsynchost "useradd -u $uid -d /srv/rsync/$1 -s /usr/bin/rssh -M -g rsync-$1 rsync-$1"
+rsync -e "ssh -i $rsynckey -p $rsyncport" -av /srv/rsync/$1 root@$rsynchost:/srv/rsync
 
 if [ "$3" != "" ] && [ "$3" != "$2" ]; then
-	bkey=`ssh_management_key_storage_filename $bhost`
-	ssh -i $bkey -p $bport root@$bhost "groupadd -g $uid rsync-$1"
-	ssh -i $bkey -p $bport root@$bhost "useradd -u $uid -d /srv/rsync/$1 -s /bin/false -M -g rsync-$1 rsync-$1"
-	rsync -e "ssh -i $bkey -p $bport" -av /srv/rsync/$1 root@$bhost:/srv/rsync
+	backupkey=`ssh_management_key_storage_filename $backuphost`
+	ssh -i $backupkey -p $backupport root@$backuphost "groupadd -g $uid rsync-$1"
+	ssh -i $backupkey -p $backupport root@$backuphost "useradd -u $uid -d /srv/rsync/$1 -s /bin/false -M -g rsync-$1 rsync-$1"
+	rsync -e "ssh -i $backupkey -p $backupport" -av /srv/rsync/$1 root@$backuphost:/srv/rsync
 fi
 
-echo "rsync/ssh target: rsync-$1@$rhost:/srv/rsync/$1"
+echo "rsync/ssh target: rsync-$1@$rsynchost:/srv/rsync/$1"
 cat $path/id_rsa
