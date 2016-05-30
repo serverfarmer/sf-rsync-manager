@@ -38,6 +38,8 @@ if [ $uid -lt 0 ]; then
 fi
 
 rsyncserver=$2
+backupserver=$3
+
 if [ -z "${rsyncserver##*:*}" ]; then
 	rsynchost="${rsyncserver%:*}"
 	rsyncport="${rsyncserver##*:}"
@@ -46,8 +48,7 @@ else
 	rsyncport=22
 fi
 
-if [ "$3" != "" ] && [ "$3" != "$2" ]; then
-	backupserver=$3
+if [ "$backupserver" != "" ] && [ "$backupserver" != "$rsyncserver" ]; then
 
 	if ! [[ $backupserver =~ ^[a-z0-9.-]+[.][a-z0-9]+([:][0-9]+)?$ ]]; then
 		echo "error: parameter 3 not conforming host name format"
@@ -81,7 +82,7 @@ ssh -i $rsynckey -p $rsyncport root@$rsynchost "groupadd -g $uid rsync-$1"
 ssh -i $rsynckey -p $rsyncport root@$rsynchost "useradd -u $uid -d /srv/rsync/$1 -s /usr/bin/rssh -M -g rsync-$1 rsync-$1"
 rsync -e "ssh -i $rsynckey -p $rsyncport" -av /srv/rsync/$1 root@$rsynchost:/srv/rsync
 
-if [ "$3" != "" ] && [ "$3" != "$2" ]; then
+if [ "$backupserver" != "" ] && [ "$backupserver" != "$rsyncserver" ]; then
 	backupkey=`ssh_management_key_storage_filename $backuphost`
 	ssh -i $backupkey -p $backupport root@$backuphost "groupadd -g $uid rsync-$1"
 	ssh -i $backupkey -p $backupport root@$backuphost "useradd -u $uid -d /srv/rsync/$1 -s /bin/false -M -g rsync-$1 rsync-$1"
