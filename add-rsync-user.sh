@@ -13,20 +13,19 @@ MINUID=1200
 MAXUID=1299
 
 
+type=`/opt/farm/scripts/config/detect-hostname-type.sh $2`
+
 if [ "$2" = "" ]; then
 	echo "usage: $0 <user> <rsync-server[:port]> [backup-server[:port]]"
 	exit 1
 elif ! [[ $1 =~ ^[a-z0-9]+$ ]]; then
-	echo "error: parameter 1 not conforming user name format"
-	exit 1
-elif ! [[ $2 =~ ^[a-z0-9.-]+[.][a-z0-9]+([:][0-9]+)?$ ]]; then
-	echo "error: parameter 2 not conforming host name format"
+	echo "error: parameter $1 not conforming user name format"
 	exit 1
 elif [ -d /srv/rsync/$1 ]; then
 	echo "error: user $1 exists"
 	exit 1
-elif [ "`getent hosts $2`" = "" ]; then
-	echo "error: host $2 not found"
+elif [ "$type" != "hostname" ] && [ "$type" != "ip" ]; then
+	echo "error: parameter $2 not conforming hostname format, or given hostname is invalid"
 	exit 1
 fi
 
@@ -49,9 +48,10 @@ else
 fi
 
 if [ "$backupserver" != "" ] && [ "$backupserver" != "$rsyncserver" ]; then
+	type=`/opt/farm/scripts/config/detect-hostname-type.sh $backupserver`
 
-	if ! [[ $backupserver =~ ^[a-z0-9.-]+[.][a-z0-9]+([:][0-9]+)?$ ]]; then
-		echo "error: parameter 3 not conforming host name format"
+	if [ "$type" != "hostname" ] && [ "$type" != "ip" ]; then
+		echo "error: parameter $3 not conforming hostname format, or given hostname is invalid"
 		exit 1
 	fi
 
@@ -61,11 +61,6 @@ if [ "$backupserver" != "" ] && [ "$backupserver" != "$rsyncserver" ]; then
 	else
 		backuphost=$backupserver
 		backupport=22
-	fi
-
-	if [ "`getent hosts $backuphost`" = "" ]; then
-		echo "error: host $backuphost not found"
-		exit 1
 	fi
 fi
 
