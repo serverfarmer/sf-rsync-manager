@@ -1,7 +1,7 @@
 #!/bin/bash
 . /opt/farm/scripts/functions.uid
-. /opt/farm/scripts/functions.net
 . /opt/farm/scripts/functions.custom
+. /opt/farm/ext/net-utils/functions
 . /opt/farm/ext/keys/functions
 # create local account with rsync access and ssh key, ready to connect Windows
 # computer(s) with cwRsync and backup them inside local (eg. office) network:
