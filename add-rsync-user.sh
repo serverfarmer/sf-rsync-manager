@@ -1,8 +1,6 @@
 #!/bin/bash
-. /opt/farm/scripts/functions.custom
 . /opt/farm/ext/passwd-utils/functions
 . /opt/farm/ext/net-utils/functions
-. /opt/farm/ext/keys/functions
 # create local account with rsync access and ssh key, ready to connect Windows
 # computer(s) with cwRsync and backup them inside local (eg. office) network:
 # - first on local management server (to preserve UID)
@@ -70,13 +68,13 @@ path=/srv/rsync/$1/.ssh
 sudo -u rsync-$1 ssh-keygen -f $path/id_rsa -P ""
 cp -a $path/id_rsa.pub $path/authorized_keys
 
-rsynckey=`ssh_management_key_storage_filename $rsynchost`
+rsynckey=`/opt/farm/ext/keys/get-ssh-management-key.sh $rsynchost`
 ssh -i $rsynckey -p $rsyncport root@$rsynchost "groupadd -g $uid rsync-$1"
 ssh -i $rsynckey -p $rsyncport root@$rsynchost "useradd -u $uid -d /srv/rsync/$1 -s /usr/bin/rssh -M -g rsync-$1 rsync-$1"
 rsync -e "ssh -i $rsynckey -p $rsyncport" -av /srv/rsync/$1 root@$rsynchost:/srv/rsync
 
 if [ "$backupserver" != "" ] && [ "$backupserver" != "$rsyncserver" ]; then
-	backupkey=`ssh_management_key_storage_filename $backuphost`
+	backupkey=`/opt/farm/ext/keys/get-ssh-management-key.sh $backuphost`
 	ssh -i $backupkey -p $backupport root@$backuphost "groupadd -g $uid rsync-$1"
 	ssh -i $backupkey -p $backupport root@$backuphost "useradd -u $uid -d /srv/rsync/$1 -s /bin/false -M -g rsync-$1 rsync-$1"
 	rsync -e "ssh -i $backupkey -p $backupport" -av /srv/rsync/$1 root@$backuphost:/srv/rsync
